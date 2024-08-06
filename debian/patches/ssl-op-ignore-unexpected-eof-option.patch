@@ -1,0 +1,46 @@
+From 5155845ce4453a07d60e2ce43946c9181bc311fa Mon Sep 17 00:00:00 2001
+From: Sergey Kandaurov <pluknet@nginx.com>
+Date: Tue, 10 Aug 2021 23:43:17 +0300
+Subject: [PATCH] SSL: use of the SSL_OP_IGNORE_UNEXPECTED_EOF option.
+
+A new behaviour was introduced in OpenSSL 1.1.1e, when a peer does not send
+close_notify before closing the connection.  Previously, it was to return
+SSL_ERROR_SYSCALL with errno 0, known since at least OpenSSL 0.9.7, and is
+handled gracefully in nginx.  Now it returns SSL_ERROR_SSL with a distinct
+reason SSL_R_UNEXPECTED_EOF_WHILE_READING ("unexpected eof while reading").
+This leads to critical errors seen in nginx within various routines such as
+SSL_do_handshake(), SSL_read(), SSL_shutdown().  The behaviour was restored
+in OpenSSL 1.1.1f, but presents in OpenSSL 3.0 by default.
+
+Use of the SSL_OP_IGNORE_UNEXPECTED_EOF option added in OpenSSL 3.0 allows
+to set a compatible behaviour to return SSL_ERROR_ZERO_RETURN:
+https://git.openssl.org/?p=openssl.git;a=commitdiff;h=09b90e0
+
+See for additional details: https://github.com/openssl/openssl/issues/11381
+
+Origin: upstream, https://github.com/nginx/nginx/commit/5155845ce4453a07d60e2ce43946c9181bc311fa
+Applied-Upstream: 1.21.2, 5155845ce4453a07d60e2ce43946c9181bc311fa
+Bug: https://github.com/openssl/openssl/issues/11381
+Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/nginx/+bug/1981457
+Reviewed-By: Bryce Harrington <bryce@canonical.com>
+Last-Update: 2022-07-27
+
+---
+ src/event/ngx_event_openssl.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/event/ngx_event_openssl.c b/src/event/ngx_event_openssl.c
+index 72dd20649d..ce2a566cdd 100644
+--- a/src/event/ngx_event_openssl.c
++++ b/src/event/ngx_event_openssl.c
+@@ -378,6 +378,10 @@ ngx_ssl_create(ngx_ssl_t *ssl, ngx_uint_t protocols, void *data)
+     SSL_CTX_set_options(ssl->ctx, SSL_OP_NO_CLIENT_RENEGOTIATION);
+ #endif
+ 
++#ifdef SSL_OP_IGNORE_UNEXPECTED_EOF
++    SSL_CTX_set_options(ssl->ctx, SSL_OP_IGNORE_UNEXPECTED_EOF);
++#endif
++
+ #ifdef SSL_MODE_RELEASE_BUFFERS
+     SSL_CTX_set_mode(ssl->ctx, SSL_MODE_RELEASE_BUFFERS);
+ #endif

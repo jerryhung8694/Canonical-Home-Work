@@ -1,0 +1,11 @@
+0002-Make-sure-signature-stays-the-same-in-all-nginx-buil.patch
+0003-define_gnu_source-on-other-glibc-based-platforms.patch
+CVE-2019-20372.patch
+ubuntu-branding.patch
+nginx-fix-pidfile.patch
+CVE-2021-23017-1.patch
+CVE-2021-23017-2.patch
+CVE-2021-3618.patch
+ssl-op-ignore-unexpected-eof-option.patch
+CVE-2022-41741_41742.patch
+lp1957320-jammy-fixed-sigquit-issue-with-unix-sockets.patch
